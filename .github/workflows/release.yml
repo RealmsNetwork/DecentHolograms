@@ -1,8 +1,15 @@
 name: Release
 
 on:
-  release:
-    types: [ published ]
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build (for example v2.10.2)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -14,12 +21,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
       - name: Set up JDK
         uses: actions/setup-java@v6.0.1
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: 25
 
       - name: Setup Gradle
@@ -30,22 +38,68 @@ jobs:
             notifications
             jdks
 
-      - name: Verify Tag Matches Project Version
+      - name: Resolve release version
+        id: version
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        shell: bash
         run: |
-          VERSION="$(./gradlew -q :plugin:printVersion)"
-          if [ "${TAG#v}" != "$VERSION" ]; then
-            echo "::error::Release tag '$TAG' does not match project version '$VERSION'"
+          VERSION="${TAG#v}"
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not determine release version from tag '$TAG'"
             exit 1
           fi
-          echo "Building release $VERSION"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Build Release Jar
-        run: ./gradlew build -Prelease
-
-      - name: Attach Jar to Release
+      - name: Verify release build version
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: ./gradlew -q :plugin:printVersion -PreleaseVersion="$RELEASE_VERSION"
+
+      - name: Verify release version
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          VERSION="$(./gradlew -q :plugin:printVersion -PreleaseVersion="$RELEASE_VERSION")"
+          if [ "$VERSION" != "$RELEASE_VERSION" ]; then
+            echo "::error::Release version '$RELEASE_VERSION' does not match Gradle project version '$VERSION'"
+            exit 1
+          fi
+
+      - name: Build release
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: ./gradlew clean build -Prelease -PreleaseVersion="$RELEASE_VERSION"
+
+      - name: Verify distributable jar
+        shell: bash
+        run: |
+          JAR="$(find plugin/build/libs -maxdepth 1 -type f -name 'DecentHolograms-*.jar' ! -name '*-sources.jar' -print -quit)"
+          if [ -z "$JAR" ]; then
+            echo "::error::No distributable DecentHolograms jar was produced"
+            exit 1
+          fi
+          echo "jar=$JAR" >> "$GITHUB_ENV"
+
+      - name: Verify NMS runtime classes
+        shell: bash
+        run: |
+          REQUIRED_CLASSES=(
+            "eu/decentsoftware/holograms/nms/api/event/NmsEntityInteractAction.class"
+            "eu/decentsoftware/holograms/nms/api/event/NmsEntityInteractEvent.class"
+          )
+          JAR_CONTENTS="$(jar tf "$JAR")"
+          for required_class in "${REQUIRED_CLASSES[@]}"; do
+            if ! grep -Fxq "$required_class" <<< "$JAR_CONTENTS"; then
+              echo "::error::Missing required runtime class: $required_class"
+              exit 1
+            fi
+          done
+
+      - name: Create GitHub release
+        env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$TAG" plugin/build/libs/DecentHolograms-*.jar --clobber
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: gh release create "$TAG" "$JAR" --title "DecentHolograms $VERSION" --generate-notes
