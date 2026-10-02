@@ -53,19 +53,19 @@ public class DisplayClickService {
     }
 
     public boolean onClick(Player player, int entityId, ClickType clickType) {
-        UUID uniqueId = player.getUniqueId();
-        if (clickCooldowns.containsKey(uniqueId)
-                && System.currentTimeMillis() - clickCooldowns.get(uniqueId) < Settings.CLICK_COOLDOWN * 50L) {
-            return false;
-        }
-
         String displayName = entityRegistry.getDisplayName(entityId);
         if (displayName == null) {
             return false;
         }
 
         DisplayBase display = displayService.getDisplay(displayName);
-        if (display == null || !display.hasActions()) {
+        if (display == null || display.getActions(clickType).isEmpty()) {
+            return false;
+        }
+
+        UUID uniqueId = player.getUniqueId();
+        Long lastClick = clickCooldowns.get(uniqueId);
+        if (lastClick != null && System.currentTimeMillis() - lastClick < Settings.CLICK_COOLDOWN * 50L) {
             return false;
         }
 
