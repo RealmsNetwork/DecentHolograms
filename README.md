@@ -14,6 +14,12 @@
 ## Support
 We are mostly active on Discord so the best way to get support is joining our [Discord Server](https://discord.decentsoftware.eu). Also, it is okay to report bugs here on GitHub or in the 'Discussion' page on the [Spigot Page](https://decentholograms.eu) of Decent Holograms.
 
+## Display Entity Mode
+
+The classic Armor Stand hologram system remains available alongside the newer Minecraft Display Entity system. Display Entities were introduced in Minecraft 1.19.4.
+
+Set `display-mode` in `config.yml` to `auto`, `display`, or `legacy`. `auto` enables the newer Displays subsystem when supported, `display` explicitly enables it on supported servers, and `legacy` disables the newer Displays subsystem while keeping classic holograms available.
+
 ## Minecraft Limitations
 - Text is always facing the player.
 - Text size or font cannot be changed.

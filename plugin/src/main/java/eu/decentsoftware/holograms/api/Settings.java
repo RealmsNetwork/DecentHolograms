@@ -92,6 +92,10 @@ public final class Settings {
     @Key("displays-eye-level-positioning")
     public static boolean DISPLAYS_EYE_LEVEL_POSITIONING = false;
 
+    /** Controls the optional Minecraft Display Entity subsystem. Values: auto, display, legacy. */
+    @Key("display-mode")
+    public static String DISPLAY_MODE = "auto";
+
     // ========================================= //
 
     /**
