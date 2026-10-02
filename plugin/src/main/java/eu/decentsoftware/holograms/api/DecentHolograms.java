@@ -141,6 +141,29 @@ public final class DecentHolograms {
         EventFactory.fireReloadEvent();
     }
 
+    private boolean shouldEnableDisplayModule(BukkitPlatformAdapter platformAdapter) {
+        boolean supported = platformAdapter.getCapabilities().supports(MinecraftFeature.DISPLAY_ENTITIES);
+        String mode = Settings.DISPLAY_MODE == null ? "auto" : Settings.DISPLAY_MODE.trim().toLowerCase(java.util.Locale.ROOT);
+        switch (mode) {
+            case "legacy":
+            case "classic":
+                return false;
+            case "display":
+            case "displays":
+            case "new":
+                if (!supported) {
+                    Log.warn("Display mode %s was requested, but this server does not support Minecraft Display Entities (1.19.4+). The new Displays subsystem will remain disabled.", mode);
+                    return false;
+                }
+                return true;
+            case "auto":
+                return supported;
+            default:
+                Log.warn("Unknown display-mode %s. Valid values are auto, display, and legacy. Falling back to auto.", mode);
+                return supported;
+        }
+    }
+
     private void setupMetrics() {
         Metrics metrics = new Metrics(this.plugin, 12797);
         metrics.addCustomChart(new SingleLineChart("holograms", () -> Hologram.getCachedHolograms().size()));
