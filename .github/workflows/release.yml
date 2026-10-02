@@ -42,10 +42,37 @@ jobs:
           echo "Building release $VERSION"
 
       - name: Build Release Jar
-        run: ./gradlew build -Prelease
+        run: ./gradlew clean build -Prelease
 
-      - name: Attach Jar to Release
+      - name: Verify Release Jar
+        run: |
+          JAR="$(find plugin/build/libs -maxdepth 1 -type f -name 'DecentHolograms-*.jar' ! -name '*-sources.jar' | head -n 1)"
+          if [ -z "$JAR" ]; then
+            echo "::error::Release jar was not produced"
+            exit 1
+          fi
+
+          echo "Release jar: $JAR"
+          echo "RELEASE_JAR=$JAR" >> "$GITHUB_ENV"
+
+          REQUIRED_CLASSES=(
+            "eu/decentsoftware/holograms/nms/api/event/NmsEntityInteractAction.class"
+            "eu/decentsoftware/holograms/nms/api/event/NmsEntityInteractEvent.class"
+            "eu/decentsoftware/holograms/nms/v26_2/InboundPacketHandler.class"
+          )
+
+          for CLASS in "${REQUIRED_CLASSES[@]}"; do
+            if ! jar tf "$JAR" | grep -Fqx "$CLASS"; then
+              echo "::error::Release jar is missing $CLASS"
+              exit 1
+            fi
+          done
+
+      - name: Create SHA-256 Checksum
+        run: sha256sum "$RELEASE_JAR" > "$RELEASE_JAR.sha256"
+
+      - name: Attach Assets to Release
         env:
           TAG: ${{ github.event.release.tag_name }}
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$TAG" plugin/build/libs/DecentHolograms-*.jar --clobber
+        run: gh release upload "$TAG" "$RELEASE_JAR" "$RELEASE_JAR.sha256" --clobber

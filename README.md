@@ -14,6 +14,19 @@
 ## Support
 We are mostly active on Discord so the best way to get support is joining our [Discord Server](https://discord.decentsoftware.eu). Also, it is okay to report bugs here on GitHub or in the 'Discussion' page on the [Spigot Page](https://decentholograms.eu) of Decent Holograms.
 
+## Display Entities
+
+Minecraft 1.19.4+ supports the new Display Entity based system through `/dh displays`.
+Classic holograms remain available separately.
+
+The new system can be disabled in `config.yml` with:
+
+```yaml
+displays-enabled: false
+```
+
+Disabling it does not affect classic holograms. New displays also support per-display permissions and click actions.
+
 ## Minecraft Limitations
 - Text is always facing the player.
 - Text size or font cannot be changed.

@@ -18,6 +18,7 @@
 
 package eu.decentsoftware.holograms.display.render;
 
+import eu.decentsoftware.holograms.api.Settings;
 import eu.decentsoftware.holograms.display.DisplayBase;
 import eu.decentsoftware.holograms.platform.api.data.DecentLocation;
 import eu.decentsoftware.holograms.platform.api.player.PlatformPlayer;
@@ -25,7 +26,18 @@ import eu.decentsoftware.holograms.platform.api.player.PlatformPlayer;
 public class DisplayVisibilityService {
 
     public boolean shouldBeShownToPlayer(DisplayBase display, PlatformPlayer player) {
-        return isDisplayEnabled(display) && isPlayerWithinDisplayRange(display, player);
+        return Settings.DISPLAYS_ENABLED
+                && isDisplayEnabled(display)
+                && isPlayerWithinDisplayRange(display, player)
+                && hasRequiredPermission(display, player);
+    }
+
+    private boolean hasRequiredPermission(DisplayBase display, PlatformPlayer player) {
+        String permission = display.getSettings().getPermission();
+        if (permission == null || permission.trim().isEmpty()) {
+            return true;
+        }
+        return player.hasPermission(permission);
     }
 
     private boolean isDisplayEnabled(DisplayBase display) {
