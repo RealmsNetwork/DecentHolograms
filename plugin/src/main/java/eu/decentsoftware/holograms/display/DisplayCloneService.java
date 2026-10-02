@@ -99,7 +99,11 @@ public class DisplayCloneService {
     private Map<ClickType, List<Action>> cloneActions(Map<ClickType, List<Action>> actions) {
         Map<ClickType, List<Action>> clonedActions = new EnumMap<>(ClickType.class);
         for (Map.Entry<ClickType, List<Action>> entry : actions.entrySet()) {
-            clonedActions.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+            List<Action> cloned = new ArrayList<>();
+            for (Action action : entry.getValue()) {
+                cloned.add(new Action(action.toString()));
+            }
+            clonedActions.put(entry.getKey(), cloned);
         }
         return clonedActions;
     }
