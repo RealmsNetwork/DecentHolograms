@@ -92,6 +92,16 @@ public final class Settings {
     @Key("displays-eye-level-positioning")
     public static boolean DISPLAYS_EYE_LEVEL_POSITIONING = false;
 
+    /**
+     * Whether the new Minecraft Display Entity system is enabled.
+     *
+     * <p>This only controls the new {@code /dh displays} system. Classic holograms are unaffected.</p>
+     *
+     * <p>Display Entities are supported by Minecraft 1.19.4 and newer.</p>
+     */
+    @Key("displays-enabled")
+    public static boolean DISPLAYS_ENABLED = true;
+
     // ========================================= //
 
     /**
