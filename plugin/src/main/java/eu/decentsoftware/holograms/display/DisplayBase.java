@@ -147,6 +147,7 @@ public abstract class DisplayBase {
 
     public void addAction(ClickType clickType, Action action) {
         actions.computeIfAbsent(clickType, k -> new ArrayList<>()).add(action);
+        markConfigDirty();
     }
 
     public void executeActions(Player player, ClickType clickType) {
@@ -163,12 +164,14 @@ public abstract class DisplayBase {
 
     public void clearActions(ClickType clickType) {
         actions.remove(clickType);
+        markConfigDirty();
     }
 
     public void removeAction(ClickType clickType, int index) {
         List<Action> clickActions = actions.get(clickType);
         if (clickActions != null) {
             clickActions.remove(index);
+            markConfigDirty();
         }
     }
 
@@ -196,6 +199,7 @@ public abstract class DisplayBase {
 
     public void setActions(Map<ClickType, List<Action>> actions) {
         this.actions.clear();
-        this.actions.putAll(actions);
+        actions.forEach((clickType, clickActions) -> this.actions.put(clickType, new ArrayList<>(clickActions)));
+        markConfigDirty();
     }
 }
